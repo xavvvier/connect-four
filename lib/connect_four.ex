@@ -8,7 +8,7 @@ defmodule ConnectFour do
 
     children = [
       # Define workers and child supervisors to be supervised
-      # worker(ConnectFour.Worker, [arg1, arg2, arg3]),
+      worker(ConnectFour.Game, []),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
