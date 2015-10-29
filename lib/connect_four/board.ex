@@ -17,6 +17,10 @@ defmodule ConnectFour.Board do
       supervise(children, strategy: :one_for_one)
   end
 
+  def place_token(player, col) do
+    :move_accepted
+  end
+
   def spaces do
     for row <- 1..@last_row, column <- 1..@last_column, do: {row, column}
   end
