@@ -14,6 +14,7 @@ defmodule ConnectFour.Game do
   def move(player, column) do
     case GenServer.call(@registered_name, {:move, player, column}) do
       :ok -> "Successful move for #{player} player in column #{column}"
+      :full -> "Column #{column} is full. Please choose another."
     end
   end
 
@@ -22,6 +23,8 @@ defmodule ConnectFour.Game do
       :move_accepted ->
         newstate = Map.put(state, :last_moved, player)
         {:reply, :ok, newstate}
+      :column_full ->
+        {:reply, :full, state}
     end
   end
 end
