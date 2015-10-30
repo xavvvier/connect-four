@@ -16,6 +16,7 @@ defmodule ConnectFour.Game do
       :ok -> "Successful move for #{player} player in column #{column}"
       :full -> "Column #{column} is full. Please choose another."
       :wrong_player -> "It's not your turn!"
+      :winner -> "Player #{player} wins"
     end
   end
 
@@ -30,6 +31,8 @@ defmodule ConnectFour.Game do
         {:reply, :ok, newstate}
       :column_full ->
         {:reply, :full, state}
+      :winner ->
+        {:reply, :winner, state}
     end
   end
 end
