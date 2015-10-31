@@ -14,7 +14,7 @@ defmodule ConnectFour.Board do
       for t <- spaces do
         worker(ConnectFour.Space, [t], id: t)
       end
-      supervise(children, strategy: :one_for_one)
+    supervise(children, strategy: :one_for_one)
   end
 
   def place_token(player, col) do
@@ -38,26 +38,30 @@ defmodule ConnectFour.Board do
   end
 
   def winner?(row, col) do
-    agent_name(row, col)
-    |> Process.whereis
-    |> Agent.get(&(&1))
-    |> column_winner?(row, col,1)
+    status = space_status(row, col)
+    column_winner?(status, row, col,1) or
+    row_winner(status, row, 1, 0) or #Start the search in column 1 with zero ocurrences
+    diagonal_winner(status, row, col)
   end
 
-  def column_winner?(_, _, _, 4) do
-    true
+  def row_winner(_, _, _, 4), do: true
+  def row_winner(_, _, col, _) when col > @last_column, do: false
+  def row_winner(player, row, col, count) do
+    status = space_status(row, col)
+    if status == player do
+      row_winner(player, row, col+1, count+1)
+    else
+      row_winner(player, row, col+1, 0)
+    end
   end
 
-  def column_winner?(_, 1, _, _) do
-    false
-  end
+  def diagonal_winner(_status, _row, _col), do: false
 
+  def column_winner?(_, _, _, 4), do: true
+  def column_winner?(_, 1, _, _): do: false
   def column_winner?(player, row, col, count) do
-    neighbor = agent_name(row-1,col)
-    |> Process.whereis
-    |> Agent.get(&(&1))
-
-    if neighbor == player do
+    status_below = space_status(row-1,col)
+    if status_below == player do
       column_winner?(player, row-1, col, count+1)
     else
       false
@@ -65,10 +69,8 @@ defmodule ConnectFour.Board do
   end
 
   def is_full?(col) do
-    agent_name(@last_row, col)
-    |> Process.whereis
-    |> Agent.get(&(&1))
-    |> (&(&1 != Empty)).()
+    space_status(@last_row, col) != Empty
+    #|> (&(&1 != Empty)).()
   end
 
   def first_empty(col) do
@@ -83,10 +85,17 @@ defmodule ConnectFour.Board do
     end
   end
 
-  def empty_space?(row, col) do
+  def space_status(row, col) when row < 1 or row > @last_row or col < 1 or col > @last_column do
+    Empty
+  end
+  def space_status(row, col) do
     agent_name(row, col)
     |> Process.whereis
     |> Agent.get(&(&1))
+  end
+
+  def empty_space?(row, col) do
+    space_status(row, col)
     |> is_empty?
   end
 
@@ -108,9 +117,7 @@ defmodule ConnectFour.Board do
   end
 
   def print_space(row, col) do
-    agent_name(row,col)
-    |> Process.whereis
-    |> Agent.get(fn x -> x end)
+    space_status(row,col)
     |> convert_for_display
     |> IO.write
   end
