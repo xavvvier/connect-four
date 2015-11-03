@@ -39,7 +39,7 @@ defmodule ConnectFour.Board do
 
   def winner?(row, col) do
     status = space_status(row, col)
-    column_winner?(status, row, col,1) or
+    column_winner?(status, row, col,1) or #Count the actual space and search downwards
     row_winner(status, row, 1, 0) or #Start the search in column 1 with zero ocurrences
     diagonal_winner(status, row, col)
   end
@@ -55,10 +55,48 @@ defmodule ConnectFour.Board do
     end
   end
 
-  def diagonal_winner(_status, _row, _col), do: false
+  def diagonal_winner(player, row, col) do
+    {bl_row, bl_col} = bottom_left(row, col) #Start the search in the bottom-left space
+    {br_row, br_col} = bottom_right(row, col) #Start the search inn the bottom-right space
+    diagonal_winner_bl_tr(player, bl_row, bl_col, 0) or diagonal_winner_br_tl(player, br_row, br_col, 0)
+  end
+
+  @doc "Search a winner in bottom-left to top-right direction"
+  def diagonal_winner_bl_tr(_, _, _, 4), do: true
+  def diagonal_winner_bl_tr(player, row, col, count) do
+    case space_status(row, col) do
+      ^player -> diagonal_winner_bl_tr(player,row+1, col+1, count+1)
+      nil    -> false
+      _      -> diagonal_winner_bl_tr(player,row+1, col+1, 0)
+    end
+  end
+
+  @doc "Search a winner in bottom-right to top-left direction"
+  def diagonal_winner_br_tl(_, _, _, 4), do: true
+  def diagonal_winner_br_tl(player, row, col, count) do
+    case space_status(row, col) do
+      ^player -> diagonal_winner_br_tl(player, row+1, col-1, count+1)
+      nil    -> false
+      _      -> diagonal_winner_br_tl(player, row+1, col-1, 0)
+    end
+  end
+
+  def bottom_left(1,col), do: {1, col}
+  def bottom_left(row, 1), do: {row, 1}
+  def bottom_left(row, col) do
+    bottom_left(row-1, col-1)
+  end
+
+  def bottom_right(1, col), do: {1, col}
+  def bottom_right(row, col) do
+    case col do
+      @last_column -> {row, col}
+      _ -> bottom_right(row-1, col+1)
+    end
+  end
 
   def column_winner?(_, _, _, 4), do: true
-  def column_winner?(_, 1, _, _): do: false
+  def column_winner?(_, 1, _, _), do: false
   def column_winner?(player, row, col, count) do
     status_below = space_status(row-1,col)
     if status_below == player do
@@ -70,7 +108,6 @@ defmodule ConnectFour.Board do
 
   def is_full?(col) do
     space_status(@last_row, col) != Empty
-    #|> (&(&1 != Empty)).()
   end
 
   def first_empty(col) do
@@ -86,7 +123,7 @@ defmodule ConnectFour.Board do
   end
 
   def space_status(row, col) when row < 1 or row > @last_row or col < 1 or col > @last_column do
-    Empty
+    nil
   end
   def space_status(row, col) do
     agent_name(row, col)
